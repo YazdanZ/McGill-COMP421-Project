@@ -100,33 +100,62 @@ note: \code{pracId} has to be \code{NOT NULL} to enforce Test's participation co
 BirthLocation(\underline{hcId, pregNum, coupleId})
 \code{hcId} foreign key referencing BirthingCenter\\
 \\
-\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
-
+\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}
+\dline
+\\
+\noindent The above relational model has the smallest number of relations without breaking constraints (such as key and participation). The ISA hierarchy can be combined into exactly 1 large relation (instead of 3). However, we would no longer be able to enforce the fact that a birth can only occur at a birthing center. Furthermore, it is possible to combine Father and Mother entity sets are reduce duplication of attributes in two tables via an ISA hierarchy. However, since Father entity set does not have any unique, mandatory attributes (such as QChcardid or email) that can be used as primary key, we would have to create an artificial key for parents (not ideal since we know mother has QChcardid and email). Furthermore, we would not be able to enforce that tests cannot be done to fathers in some ISA translation methods. \\
+\\
+\noindent \textbf{See the \textit{Restrictions} section for relational and ER model restrictions.}
 \section*{ER model}
 \subsection*{Artificial keys}
 \begin{table}[h]
     \begin{center}
         \begin{tabular}{lllll}
             \cline{1-2}
-            \multicolumn{1}{|l|}{Entity Set}            & \multicolumn{1}{l|}{Artificial key} &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{HealthcareInstitution} & \multicolumn{1}{l|}{hcId}           &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Father}                & \multicolumn{1}{l|}{fatherId}       &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{InformationSession}    & \multicolumn{1}{l|}{sessId}         &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Test}                  & \multicolumn{1}{l|}{testId}         &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Baby}                  & \multicolumn{1}{l|}{babyId}         &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Appointment}           & \multicolumn{1}{l|}{apptId}         &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Note}                  & \multicolumn{1}{l|}{noteId}         &  &  & \\ \cline{1-2}
-            \multicolumn{1}{|l|}{Couple}                & \multicolumn{1}{l|}{coupleId}       &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{\textbf{Entity Set}}   & \multicolumn{1}{l|}{\textbf{Artificial key}} &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{HealthcareInstitution} & \multicolumn{1}{l|}{hcId}                    &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Father}                & \multicolumn{1}{l|}{fatherId}                &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{InformationSession}    & \multicolumn{1}{l|}{sessId}                  &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Test}                  & \multicolumn{1}{l|}{testId}                  &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Baby}                  & \multicolumn{1}{l|}{babyId}                  &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Appointment}           & \multicolumn{1}{l|}{apptId}                  &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Note}                  & \multicolumn{1}{l|}{noteId}                  &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Couple}                & \multicolumn{1}{l|}{coupleId}                &  &  & \\ \cline{1-2}
 
 
 
-                                                        &                                     &  &  &
+                                                        &                                              &  &  &
         \end{tabular}
     \end{center}
     \caption{Artificial keys created in the ER model}
 \end{table}
 
 \subsection*{Assumptions}
+In addition to assumptions made in the project handout, we assumed to following:
+\begin{itemize}
+    \item A midwife works at exactly 1 healthcare institution
+    \item A couple should have exactly 1 mother and optionally a father
+    \item All couples registering to the system are pregnant
+    \item Couples can register to multiple information sessions
+    \item Couples are initially not registered to an information session
+    \item Couples can only attend information sessions they have been invited to
+    \item A pregnancy is later assigned a midwife (not as soon as it is created in the system)
+    \item An appointment's note is taken by the same midwife who set up the appointment
+    \item An appointment can have zero notes
+    \item We assume all tests are conducted by exactly one technician
+    \item We assume that babies are later added to the pregnancy (we don't know how many babies a pregnancy has)
+    \item We assume that a test can only be prescribed by exactly one midwife
+    \item We assume that a couple doesn't have to be selected again after their first pregnancy. Furthermore, they don't have to attend a second information session to be eligible for their second pregnancy.
+    \item We assume tests only have 1 result.
+    \item We assume  information sessions can zero couples invited to it and zero attendance
+    \item We assume a technician can have 0 tests
+    \item We assume a test is only performed at 1 lab
+    \item We assume a healthcare institution can have 0 midwives employed.
+    \item We assume a midwife can be in charge of 0 pregnancies
+    \item We assume a pregnancy can have 0 appointments (for example appointments start after a pregnancy is assigned a midwife)
+    \item We assume notes cannot exist without an appointment
+    \item We assume a father and mother can only exist in the system if they are part of a couple (this requires the sign up to be done simultanously for father and mother to constitute a couple)
+\end{itemize}
 \subsection*{Restrictions}
 \begin{itemize}
     \item The \code{HealthcareInstitution}, \code{BirthingCenter}, \code{CommunityClinic} ISA hierarchy is \textbf{disjoint} and \textbf{covering}. This cannot be reflected by the ER model or the relational translation and needs to be enforced by the application.
@@ -136,6 +165,7 @@ BirthLocation(\underline{hcId, pregNum, coupleId})
     \item We cannot enforce the \code{Couple}'s participation constraint in the \code{belongs} relationship set with \code{Pregnancy} (i.e., the fact that a couple in the system always has a pregnancy) in the relational model. This should be enforced by the application.
     \item Appointments are set by the primary or backup midwife. To save which of the two midwives set up the \code{Appointment}, we created a relationship set (named \code{sets up}) between \code{Appointment} and \code{Midwife}. This cycle can cause inconsistencies in the database since the relational or ER models do not enforce the fact that an pregnancy's appointments can only be set up by the midwives responsible for that pregnancy. Appropriate checks need to be implemented by the application. The same applies to an appointment's \code{Notes} since we assume that the midwife setting up the appointment takes the note.
     \item Similar to the previous restrictions, due to cycles (relationship sets: \code{testsMother}, \code{testsBaby}, \code{prescribes}), the model does not enforce the test for a pregnancy be prescribed by the pregancy's primary or backup midwife. Moreover, the model does not enforce the test to be conducted on a baby or mother associated to the pregnancy. The \code{prescribes} relationship set was created to clarify which of the two midwives prescibed the tests, causing to this possible inconsistency. We could have instead added an attribute specifying which of the two midwives prescribed the test and let the application trace back to the midwife from the associated pregnancy. A cycle for \code{testsBaby} was however inevitable since a pregnancy can have multiple babies but evitable for mother since we can trace back to the mother from a pregnancy (a pregnancy only has one mother). Checks by the application have to be made to verify data consistency before inserting data.
+    \item We cannot enforce in the relational model that a mother and father can only exist in the system if they are part of at least 1 couple. This participation constraint has to be enforced by our application.
     \item The model does not enforce that a Father minimally include their name, date of
           birth, phone number and profession. These attributes have to be \code{NOT NULL} during schemas definitions. This also applies to many other attributes in other entity sets.
     \item The model does not enforce that only parents that showed interest in the program and attended an information session and are selected will be assigned a midwife to their pregnancy. Furthermore, the model does not guarantee that a midwife will be associated to couples selected for the program.
