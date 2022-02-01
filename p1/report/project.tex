@@ -1,0 +1,136 @@
+\documentclass[10pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\emergencystretch 5em%
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\dline}{\par\noindent\rule{\textwidth}{0.2pt}\\}
+\usepackage[margin=1in]{geometry}
+
+\title{COMP 421 - Database Systems \\ 
+\large Project 1: Database Design and Data Modelling}
+\author{Seyed Yazdan Zinati\\seyed.zinati@mail.mcgill.ca\\ 260928077}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section*{Assumptions}
+\section*{Restrictions}
+\section*{Relational Translation}
+
+\dline
+\code{HealthcareInstitution(\underline{hcId}, phoneNum, name, email, address, website)}
+\dline
+\code{CommunityClinic(\underline{hcId})}\\
+\\
+\code{hcId} foreign key referencing \code{HealthcareInstitution}
+\dline
+\code{BirthingCenter(\underline{hcId})}\\
+\\
+\code{hcId} foreign key referencing \code{HealthcareInstitution}
+\dline
+\code{Midwife(\underline{pracId}, name, email, phoneNum, hcId)}\\
+\\
+\code{hcId} foreign key referencing \code{HealthcareInstitution}\\
+\\
+note: \code{hcId} has to be \code{NOT NULL} to enforce Midwife's participation constraint in the \code{employs} relationship set.
+\dline
+\code{Father(\underline{fatherId}, phoneNum, name, email, address, QChcardid, dateOfBirth, profession, bloodType)}
+\dline
+\code{Mother(\underline{QChcardid}, phoneNum, name, email, adddress, dateOfBirth, profession, bloodType)}
+\dline
+\code{Couple(\underline{coupleId}, invited, QChcardid, fatherId)}\\
+\\
+\code{QChcardid} foreign key referencing \code{Mother}\\
+\code{fatherId} foreign key referencing \code{Father}\\
+\\
+note: \code{QChcardid} has to be \code{NOT NULL} to enforce Couple's participation constraint in the \code{constitutesF} relationship set.
+
+\dline
+\code{InformationSession(\underline{sessId}, language, date, time, pracId)}\\
+\\
+\code{pracId} foreign key referencing Midwife\\
+\\
+note: \code{pracId} has to be \code{NOT NULL} to enforce InformationSession's participation constraint in the \code{hosts} relationship set.
+\dline
+\code{Invitation(\underline{sessId, coupleId}, attended, registered)}
+\dline
+\code{Pregnancy(\underline{coupleId, pregNum}, estDueDate, expBirthTimeframe, lastMenstPeriod, isHomeBirth, primaryMidwife, backupMidwife)}\\
+\\
+\code{coupleId} foreign key referencing \code{Couple}\\
+\code{primaryMidwife} foreign key referencing \code{Midwife(pracId)}\\
+\code{backupMidwife} foreign key referencing \code{Midwife(pracId)}\\
+\\
+note: \code{coupleId} is part of the primary key and thus has to be \code{NOT NULL}.
+\dline
+\code{Appointment(\underline{apptId}, date, time, pregNum, coupleId, pracId)}\\
+\\
+\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
+\code{pracId} foreign key referencing \code{Midwife}\\
+\\
+note: \code{pregNum} and \code{coupleId} has to be \code{NOT NULL} to enforce Appointment's participation constraint in the \code{belongs} relationship set.\\
+\\
+note: \code{pracId} has to be \code{NOT NULL} to enforce Appointment's participation constraint in the \code{sets up} relationship set.
+\dline
+\code{Note(\underline{noteId}, date, time, description, apptId)}\\
+\\
+\code{apptId} foreign key referencing \code{Appointment}\\
+\\
+note: \code{apptId} has to be \code{NOT NULL} to enforce Note's participation constraint in the \code{belongs} relationship set.
+\dline
+\code{Baby(\underline{babyId}, name, gender, timeOfBirth, dateOfBirth, bloodType, pregNum, coupleId)}\\
+\\
+\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
+\\
+note: \code{pregNum} and \code{coupleId} has to be \code{NOT NULL} to enforce Baby's participation constraint in the \code{born from} relationship set.
+\dline
+\code{Technician(\underline{techId}, name, phoneNum})
+\dline
+\code{Test(\underline{testId}, type, dateSampleTaken, result, dateConducted, lab, techId, pracId, pregNum, coupleId, babyId, QChcardid)}\\
+\\
+\code{techId} foreign key referencing \code{Technician}\\
+\code{pracId} foreign key referencing \code{Midwife}\\
+\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
+\code{babyId} foreign key referencing \code{Baby}\\
+\code{QChcardid} foreign key referencing \code{Mother}\\
+\\
+note: \code{pregNum, coupleId} has to be \code{NOT NULL} to enforce Test's participation constraint in the \code{belongs} relationship set.\\
+\\
+note: \code{techId} has to be \code{NOT NULL} to enforce Test's participation constraint in the \code{conducts} relationship set.\\
+\\
+note: \code{pracId} has to be \code{NOT NULL} to enforce Test's participation constraint in the \code{prescribes} relationship set.
+\dline
+BirthLocation(\underline{hcId, pregNum, coupleId})
+\code{hcId} foreign key referencing BirthingCenter\\
+\\
+\code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
+% \code{HealthcareInstitution(\underline{hcId}, phoneNum, name, email, address, website)}\\
+% \code{CommunityClinic(\underline{hcId})}\\
+% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
+% \code{BirthingCenter(\underline{hcId})}\\
+% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
+% \code{Midwife(\underline{pracId}, name, email, phoneNum, hcId)}\\
+% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
+% \indent Note: \code{hcId} should be NOT NULL to enforce participation constraint\\
+% \code{InformationSession(\underline{sessId}, language, date, time, pracId)}\\
+% \indent foreign key \code{pracId} referencing \code{Midwife}\\
+% \indent Note: \code{pracId} should be NOT NULL to enforce participation constraint\\
+% \code{Parent(\underline{pId}, phoneNum, name, email, address, QChcardid, dateOfBirth, profession, bloodType)}\\
+% \code{Father(\underline{pId})}\\
+% \indent \code{pId} foreign key referencing \code{Parent}\\
+% \code{Mother(\underline{pId})}\\
+% \indent \code{pId} foreign key referencing \code{Parent}\\
+% \code{Couple(\underline{cid}, invited, mId, fId)}\\
+% \indent \code{mId} foreign key referencing \code{Mother}\\
+% \indent \code{fId} foreign key referencing \code{Father}\\
+% \indent Note: \code{mId} should be NOT NULL to enforce participation constraint\\
+% \code{Invitation(\underline{cId, sessId}, attended, registered)}\\
+% \indent \code{cId} foreign key referencing \code{Couple}\\
+% \indent \code{sessId} foreign key referencing \code{InformationSession}\\
+% \code{Pregnancy(\underline{pregNum, cId}, estDueDate, expBirthTimeframe, lastMenstPeriod, primaryMidwife, backupMidwife)}\\
+% \indent \code{cId} foreign key referencing \code{Couple}\\
+% \indent \code{primaryMidwife} foreign key referencing \code{Midwife(pracId)}\\
+% \indent \code{backupMidwife} foreign key referencing \code{Midwife(pracId)}\\
+% \code{Appointment(\underline{apptId}, date, time, pregNum, cId)}
+% \indent \code{(pregNum, cId)} foreign key referencing \code{Pregnancy}\\
+
+
+\end{document}
