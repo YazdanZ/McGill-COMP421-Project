@@ -12,8 +12,7 @@
 
 \begin{document}
 \maketitle
-\section*{Assumptions}
-\section*{Restrictions}
+
 \section*{Relational Translation}
 
 \dline
@@ -37,7 +36,7 @@ note: \code{hcId} has to be \code{NOT NULL} to enforce Midwife's participation c
 \dline
 \code{Mother(\underline{QChcardid}, phoneNum, name, email, adddress, dateOfBirth, profession, bloodType)}
 \dline
-\code{Couple(\underline{coupleId}, invited, QChcardid, fatherId)}\\
+\code{Couple(\underline{coupleId}, invited, interested, selected, QChcardid, fatherId)}\\
 \\
 \code{QChcardid} foreign key referencing \code{Mother}\\
 \code{fatherId} foreign key referencing \code{Father}\\
@@ -84,7 +83,7 @@ note: \code{pregNum} and \code{coupleId} has to be \code{NOT NULL} to enforce Ba
 \dline
 \code{Technician(\underline{techId}, name, phoneNum})
 \dline
-\code{Test(\underline{testId}, type, dateSampleTaken, result, dateConducted, lab, techId, pracId, pregNum, coupleId, babyId, QChcardid)}\\
+\code{Test(\underline{testId}, type, datePrescribed, dateSampleTaken, result, dateConducted, lab, techId, pracId, pregNum, coupleId, babyId, QChcardid)}\\
 \\
 \code{techId} foreign key referencing \code{Technician}\\
 \code{pracId} foreign key referencing \code{Midwife}\\
@@ -102,35 +101,50 @@ BirthLocation(\underline{hcId, pregNum, coupleId})
 \code{hcId} foreign key referencing BirthingCenter\\
 \\
 \code{(pregNum, coupleId)} foreign key referencing \code{Pregnancy}\\
-% \code{HealthcareInstitution(\underline{hcId}, phoneNum, name, email, address, website)}\\
-% \code{CommunityClinic(\underline{hcId})}\\
-% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
-% \code{BirthingCenter(\underline{hcId})}\\
-% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
-% \code{Midwife(\underline{pracId}, name, email, phoneNum, hcId)}\\
-% \indent \code{hcId} foreign key referencing \code{HealthcareInstitution}\\
-% \indent Note: \code{hcId} should be NOT NULL to enforce participation constraint\\
-% \code{InformationSession(\underline{sessId}, language, date, time, pracId)}\\
-% \indent foreign key \code{pracId} referencing \code{Midwife}\\
-% \indent Note: \code{pracId} should be NOT NULL to enforce participation constraint\\
-% \code{Parent(\underline{pId}, phoneNum, name, email, address, QChcardid, dateOfBirth, profession, bloodType)}\\
-% \code{Father(\underline{pId})}\\
-% \indent \code{pId} foreign key referencing \code{Parent}\\
-% \code{Mother(\underline{pId})}\\
-% \indent \code{pId} foreign key referencing \code{Parent}\\
-% \code{Couple(\underline{cid}, invited, mId, fId)}\\
-% \indent \code{mId} foreign key referencing \code{Mother}\\
-% \indent \code{fId} foreign key referencing \code{Father}\\
-% \indent Note: \code{mId} should be NOT NULL to enforce participation constraint\\
-% \code{Invitation(\underline{cId, sessId}, attended, registered)}\\
-% \indent \code{cId} foreign key referencing \code{Couple}\\
-% \indent \code{sessId} foreign key referencing \code{InformationSession}\\
-% \code{Pregnancy(\underline{pregNum, cId}, estDueDate, expBirthTimeframe, lastMenstPeriod, primaryMidwife, backupMidwife)}\\
-% \indent \code{cId} foreign key referencing \code{Couple}\\
-% \indent \code{primaryMidwife} foreign key referencing \code{Midwife(pracId)}\\
-% \indent \code{backupMidwife} foreign key referencing \code{Midwife(pracId)}\\
-% \code{Appointment(\underline{apptId}, date, time, pregNum, cId)}
-% \indent \code{(pregNum, cId)} foreign key referencing \code{Pregnancy}\\
 
+\section*{ER model}
+\subsection*{Artificial keys}
+\begin{table}[h]
+    \begin{center}
+        \begin{tabular}{lllll}
+            \cline{1-2}
+            \multicolumn{1}{|l|}{Entity Set}            & \multicolumn{1}{l|}{Artificial key} &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{HealthcareInstitution} & \multicolumn{1}{l|}{hcId}           &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Father}                & \multicolumn{1}{l|}{fatherId}       &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{InformationSession}    & \multicolumn{1}{l|}{sessId}         &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Test}                  & \multicolumn{1}{l|}{testId}         &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Baby}                  & \multicolumn{1}{l|}{babyId}         &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Appointment}           & \multicolumn{1}{l|}{apptId}         &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Note}                  & \multicolumn{1}{l|}{noteId}         &  &  & \\ \cline{1-2}
+            \multicolumn{1}{|l|}{Couple}                & \multicolumn{1}{l|}{coupleId}       &  &  & \\ \cline{1-2}
+
+
+
+                                                        &                                     &  &  &
+        \end{tabular}
+    \end{center}
+    \caption{Artificial keys created in the ER model}
+\end{table}
+
+\subsection*{Assumptions}
+\subsection*{Restrictions}
+\begin{itemize}
+    \item The \code{HealthcareInstitution}, \code{BirthingCenter}, \code{CommunityClinic} ISA hierarchy is \textbf{disjoint} and \textbf{covering}. This cannot be reflected by the ER model or the relational translation and needs to be enforced by the application.
+    \item The ER model and relational translation does not enforce the creation of exactly 1 couple per \code{Father} and \code{Mother}. In other words, the same set of \code{Mother} and \code{Father} can create multiple couples since a new artificial key is created for \code{Couple}. A check that a couple with the same parents don't exist should be done by the application before couple creation.
+    \item \code{Father} is given an artificial key since unique attributes (i.e., email and Quebec Health Card Id) are optional for entity creation. The ER model cannot enforce the uniqueness of a father in the database if a father decides to register again since he will be given a new artificial key. Appropriate checks have to be done in the application.
+    \item We keep track of a \code{Couple}'s pregnancy, not the mother. This means a new pregnancy with another man will be considered the couple's first pregnancy even though it is not the mother's first pregnancy.
+    \item We cannot enforce the \code{Couple}'s participation constraint in the \code{belongs} relationship set with \code{Pregnancy} (i.e., the fact that a couple in the system always has a pregnancy) in the relational model. This should be enforced by the application.
+    \item Appointments are set by the primary or backup midwife. To save which of the two midwives set up the \code{Appointment}, we created a relationship set (named \code{sets up}) between \code{Appointment} and \code{Midwife}. This cycle can cause inconsistencies in the database since the relational or ER models do not enforce the fact that an pregnancy's appointments can only be set up by the midwives responsible for that pregnancy. Appropriate checks need to be implemented by the application. The same applies to an appointment's \code{Notes} since we assume that the midwife setting up the appointment takes the note.
+    \item Similar to the previous restrictions, due to cycles (relationship sets: \code{testsMother}, \code{testsBaby}, \code{prescribes}), the model does not enforce the test for a pregnancy be prescribed by the pregancy's primary or backup midwife. Moreover, the model does not enforce the test to be conducted on a baby or mother associated to the pregnancy. The \code{prescribes} relationship set was created to clarify which of the two midwives prescibed the tests, causing to this possible inconsistency. We could have instead added an attribute specifying which of the two midwives prescribed the test and let the application trace back to the midwife from the associated pregnancy. A cycle for \code{testsBaby} was however inevitable since a pregnancy can have multiple babies but evitable for mother since we can trace back to the mother from a pregnancy (a pregnancy only has one mother). Checks by the application have to be made to verify data consistency before inserting data.
+    \item The model does not enforce that a Father minimally include their name, date of
+          birth, phone number and profession. These attributes have to be \code{NOT NULL} during schemas definitions. This also applies to many other attributes in other entity sets.
+    \item The model does not enforce that only parents that showed interest in the program and attended an information session and are selected will be assigned a midwife to their pregnancy. Furthermore, the model does not guarantee that a midwife will be associated to couples selected for the program.
+    \item The model does not enforce the fact that a midwife cannot be the primary and backup midwife for the same pregnancy. Checks have to be done to ensure the backup and primary midwives are distinct.
+    \item The model allows a midwife to be assigned to their own pregnancy if they are a mother or a father (since Midwife, Mother, and Father are 3 different entity sets).
+    \item The system cannot enforce a female to register as a Father or a Male to register as mother. It is assumed that for example a user will register as Mother.
+    \item Ideally, we would not want a Technician assigned to a pregnancy's test to be the father or mother of that pregnancy. We cannot enforce that since Technician is a different entity set than Father and Mother.
+    \item The model does not enforce that a Test has to either test a mother or the baby. The following two scenarios can be problematic: a Test tests both mother and baby, a Test tests neither the mother or baby. It should be enforced that a Test has to test exactly 1 person.
+    \item It is mentioned in the project assumptions that emails can be considered to be unique to individuals. This is currently not enforced by the model since email is never a primary key (Mother: QChcardid, Father: fatherId, Midwife: pracId). Thus, a midiwfe can have the same email as another midwife or a mother/father can have the same email as another mother/father. We have to enforce this constraint in the application or change the relational model.
+\end{itemize}
 
 \end{document}
