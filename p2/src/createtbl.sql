@@ -16,7 +16,7 @@ CREATE TABLE HealthcareInstitutions
     -- varchar since it can have '+', leading zeros, '#' and be sip.
     -- 22 supports most numbers (including extensions)
     name     VARCHAR(30)  NOT NULL,
-    email    VARCHAR(319) NOT NULL UNIQUE 0
+    email    VARCHAR(319) NOT NULL UNIQUE
         -- 64 characters for the username
         -- 1 character for '@'
         -- 254 characters for the domain name
