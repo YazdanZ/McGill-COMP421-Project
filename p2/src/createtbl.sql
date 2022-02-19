@@ -15,7 +15,7 @@ CREATE TABLE HealthcareInstitutions
     phoneNum VARCHAR(22)  NOT NULL,      -- 10 digits for CA and US phones
     -- varchar since it can have '+', leading zeros, '#' and be sip.
     -- 22 supports most numbers (including extensions)
-    name     VARCHAR(30)  NOT NULL,
+    name     VARCHAR(50)  NOT NULL,
     email    VARCHAR(319) NOT NULL UNIQUE
         -- 64 characters for the username
         -- 1 character for '@'
@@ -221,17 +221,17 @@ CREATE TABLE Tests
     testId          INTEGER     NOT NULL,
     type            VARCHAR(30) NOT NULL,
     datePrescribed  DATE        NOT NULL,
-    dateSampleTaken DATE,           -- can be NULL for tests without sample
-    results         VARCHAR(10000), -- recorded once test is performed (10000 is a reasonable char max lenght)
-    dateConducted   DATE,           -- recorded once test is conducted
-    lab             VARCHAR(30),    -- labs are out of scope of this project (we simply record lab name)
+    dateSampleTaken DATE,                                        -- can be NULL for tests without sample
+    results         VARCHAR(10000),                              -- recorded once test is performed (10000 is a reasonable char max lenght)
+    dateConducted   DATE,                                        -- recorded once test is conducted
+    lab             VARCHAR(30),                                 -- labs are out of scope of this project (we simply record lab name)
     -- We assume that a test can be performed outside a lab (e.g., by a midwife)
     techId          INTEGER     NOT NULL,
     pracId          INTEGER     NOT NULL,
     pregNum         INTEGER     NOT NULL,
     coupleId        INTEGER     NOT NULL,
-    babyId          INTEGER,        -- can be null (e.g., test performed on mother)
-    QChcardid       CHAR(12),       -- can be null (e.g., test performed on baby)
+    babyId          INTEGER,                                     -- can be null (e.g., test performed on mother)
+    QChcardid       CHAR(12),                                    -- can be null (e.g., test performed on baby)
     PRIMARY KEY (testId),
     FOREIGN KEY (pregNum, coupleId)
         REFERENCES Pregnancies,
@@ -242,7 +242,10 @@ CREATE TABLE Tests
     FOREIGN KEY (babyId)
         REFERENCES Babies,
     FOREIGN KEY (QChcardid)
-        REFERENCES Mothers
+        REFERENCES Mothers,
+    CHECK ( dateConducted >= dateSampleTaken AND dateSampleTaken >= datePrescribed ),
+    CHECK ( (babyId IS NULL OR QChcardid IS NULL)
+        AND NOT (babyId IS NOT NULL AND QChcardid IS NOT NULL) ) -- test for only mother OR baby
 );
 
 CREATE TABLE BirthLocations -- This relation only created when birth is at a Birthing Center
