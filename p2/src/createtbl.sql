@@ -107,7 +107,7 @@ CREATE TABLE Couples
     interested BOOLEAN  NOT NULL DEFAULT FALSE,
     selected   BOOLEAN  NOT NULL DEFAULT FALSE,
     QChcardid  CHAR(12) NOT NULL,
-    fatherId   INTEGER,
+    fatherId   INTEGER, -- a single mother can constitute a couple
     PRIMARY KEY (coupleId),
     FOREIGN KEY (QChcardid)
         REFERENCES Mothers,
@@ -142,15 +142,14 @@ CREATE TABLE Invitations
 
 CREATE TABLE Pregnancies
 (
-    coupleId               INTEGER NOT NULL,
-    pregNum                INTEGER NOT NULL CHECK ( pregNum > 0 ),
-    expBirthTimeframeBegin DATE    NOT NULL,
-    expBirthTimeframeEnd   DATE    NOT NULL,
-    estDueDate             DATE,    -- determined at a later stage
-    lastMenstPeriod        DATE,    -- recorded at a later stage
-    isHomeBirth            BOOLEAN, -- decided at a later stage
-    primaryMidwife         INTEGER, -- assigned at a later stage
-    backupMidwife          INTEGER, -- assigned at a later stage
+    coupleId          INTEGER NOT NULL,
+    pregNum           INTEGER NOT NULL CHECK ( pregNum > 0 ),
+    expBirthTimeframe DATE    NOT NULL, -- will only store YEAR-MONTH, we ignore DAY
+    finalEstDueDate        DATE,             -- determined at a later stage
+    lastMenstPeriod   DATE,             -- recorded at a later stage
+    isHomeBirth       BOOLEAN,          -- decided at a later stage
+    primaryMidwife    INTEGER,          -- assigned at a later stage
+    backupMidwife     INTEGER,          -- assigned at a later stage
     PRIMARY KEY (pregNum, coupleId),
     FOREIGN KEY (coupleId)
         REFERENCES Couples,
@@ -158,7 +157,7 @@ CREATE TABLE Pregnancies
         REFERENCES Midwives (pracId),
     FOREIGN KEY (backupMidwife)
         REFERENCES Midwives (pracId),
-    CHECK ( expBirthTimeframeBegin < expBirthTimeframeEnd)
+    CHECK ( primaryMidwife <> backupMidwife )
 );
 
 CREATE TABLE Appointments
@@ -190,17 +189,17 @@ CREATE TABLE Notes
 CREATE TABLE Babies
 (
     babyId      INTEGER NOT NULL,
-    name        VARCHAR(30),            -- can be determined at a later time
+    name        VARCHAR(30),                       -- can be determined at a later time
     gender      CHAR(1)
         CHECK ( gender IN ('M', 'F') ), -- determined through tests (M/F binary check)
-    timeOfBirth TIME,                   -- recorded after birth
-    dateOfBirth DATE,                   -- recorded after birth
+    timeOfBirth TIME,                              -- recorded after birth
+    dateOfBirth DATE,                              -- recorded after birth
     bloodType   VARCHAR(3)
         CHECK
             (
                 bloodType IN
                 ('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-')
-            ),                          -- determined at a later stage
+            ),                                     -- determined at a later stage
     pregNum     INTEGER NOT NULL,
     coupleId    INTEGER NOT NULL,
     PRIMARY KEY (babyId),
