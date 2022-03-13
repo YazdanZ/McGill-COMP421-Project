@@ -3,4 +3,7 @@
 *.fls
 *.log
 *.synctex.gz
-/.idea
+
+# intellij
+*.idea/
+*out/
