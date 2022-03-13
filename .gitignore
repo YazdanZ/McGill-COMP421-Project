@@ -7,3 +7,8 @@
 # intellij
 *.idea/
 *out/
+
+# notebook
+.ipynb_checkpoints
+
+*env/
