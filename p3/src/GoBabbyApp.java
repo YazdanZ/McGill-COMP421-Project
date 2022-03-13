@@ -19,12 +19,14 @@ class GoBabbyApp {
     private static Connection con;
     private static Statement statement;
 
-    private static int pracId;
-    private static List<Map<String, Object>> rsList;
-    private static Map<String, Object> selectedRow;
+
+    private static int pracId; // selected midwife practitioner id
+    private static List<Map<String, Object>> rsList; // ArrayList copy of the result set
+    private static Map<String, Object> selectedRow; // selected appointment/pregnancy
+
+
     private static final Scanner scanner = new Scanner(System.in);
 
-    @SuppressWarnings("InfiniteLoopStatement")
     public static void main(String[] args) throws SQLException {
         System.out.println("----- Go Babby Application ------");
 
@@ -95,8 +97,8 @@ class GoBabbyApp {
             java.sql.ResultSet rs = statement.executeQuery(querySQL);
 
             if (rs.next()) {
-                pracId = rs.getInt("pracId");
-                String name = rs.getString("name");
+                pracId = rs.getInt("PRACID");
+                String name = rs.getString("NAME");
                 System.out.println("Welcome " + name.split(" ")[0]);
             } else {
                 System.out.println("Invalid practitioner id");
@@ -109,6 +111,7 @@ class GoBabbyApp {
 
             System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
             System.out.println(e);
+            authMidwife();
         }
         listMidwifeAppointments();
     }
@@ -123,18 +126,21 @@ class GoBabbyApp {
         String input = scanner.nextLine();
         if (input.equalsIgnoreCase("e")) terminateBabbyApp(0);
 
-        ResultSet rs = null;
+        ResultSet rs;
 
         try {
             String querySQL = """
-                    SELECT TIME,
+                    SELECT APPTID,
+                           TIME,
                            m.NAME,
                            m.QCHCARDID,
+                           APPOINTMENTS.COUPLEID,
+                           P.PREGNUM,
                            CASE WHEN PRIMARYMIDWIFE = %d THEN 'P' ELSE 'B' END AS role
                     FROM APPOINTMENTS
                              JOIN COUPLES c ON c.COUPLEID = APPOINTMENTS.COUPLEID
-                             JOIN MOTHERS m on c.QCHCARDID = m.QCHCARDID
-                             JOIN PREGNANCIES P on APPOINTMENTS.PREGNUM = P.PREGNUM and APPOINTMENTS.COUPLEID = P.COUPLEID
+                             JOIN MOTHERS m ON c.QCHCARDID = m.QCHCARDID
+                             JOIN PREGNANCIES P ON APPOINTMENTS.PREGNUM = P.PREGNUM and APPOINTMENTS.COUPLEID = P.COUPLEID
                     WHERE PRACID = %d
                       AND DATE = '%s'
                     ORDER BY TIME;
@@ -216,12 +222,12 @@ class GoBabbyApp {
                 4. Prescribe a test
                 5. Go back to the appointments
                         
-                Enter your choice:\040
-                """, selectedRow.get("NAME"), selectedRow.get("QCHCARDID"));
+                Enter your choice:\040""", selectedRow.get("NAME"), selectedRow.get("QCHCARDID"));
 
         int input = 0;
         try {
             input = scanner.nextInt();
+            scanner.nextLine();
         } catch (InputMismatchException e) {
             System.out.println("Invalid input: enter integer (1-5)");
             actOnAppointment();
@@ -232,11 +238,14 @@ class GoBabbyApp {
                 reviewNotes();
                 actOnAppointment();
             case 2:
-                break;
+                reviewTests();
+                actOnAppointment();
             case 3:
-                break;
+                addNote();
+                actOnAppointment();
             case 4:
-                break;
+                prescribeTest();
+                actOnAppointment();
             case 5:
                 selectAppointment();
             default:
@@ -245,8 +254,156 @@ class GoBabbyApp {
         }
     }
 
+    /**
+     * Show the notes associated to a pregnancy.
+     */
     private static void reviewNotes() {
+        try {
+            String querySQL = """
+                    SELECT TIMESTAMP, DESCRIPTION
+                    FROM NOTES
+                             JOIN APPOINTMENTS A ON A.APPTID = NOTES.APPTID
+                             JOIN PREGNANCIES P ON A.PREGNUM = P.PREGNUM
+                        AND A.COUPLEID = P.COUPLEID
+                    WHERE A.PREGNUM = %d
+                      AND A.COUPLEID = %d
+                    ORDER BY TIMESTAMP DESC;
+                    """.formatted((int) selectedRow.get("PREGNUM"), (int) selectedRow.get("COUPLEID"));
 
+            java.sql.ResultSet rs = statement.executeQuery(querySQL);
+
+            if (!rs.next()) {
+                System.out.println("No notes associated to this pregnancy");
+            } else {
+                do {
+                    System.out.println(
+                            rs.getString("TIMESTAMP")
+                                    + "\t"
+                                    + rs.getString("DESCRIPTION"));
+                } while (rs.next());
+            }
+        } catch (SQLException e) {
+            sqlCode = e.getErrorCode();
+            sqlState = e.getSQLState();
+
+            System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
+            System.out.println(e);
+        }
+    }
+
+    /**
+     * Show the tests performed the mother associated to the selected pregnancy.
+     */
+    private static void reviewTests() {
+        try {
+            String querySQL = """
+                    SELECT DATEPRESCRIBED,
+                           '[' || TYPE || ']'   AS TYPE,
+                           CASE
+                               WHEN RESULTS = ''
+                                   OR RESULTS IS NULL THEN 'PENDING'
+                               ELSE RESULTS END AS RESULTS
+                    FROM TESTS
+                             JOIN PREGNANCIES P ON TESTS.PREGNUM = P.PREGNUM AND TESTS.COUPLEID = P.COUPLEID
+                    WHERE QCHCARDID = '%s'
+                      AND P.PREGNUM = %d
+                      AND P.COUPLEID = %d
+                    ORDER BY DATEPRESCRIBED DESC;
+                    """.formatted(selectedRow.get("QCHCARDID"), (int) selectedRow.get("PREGNUM"), (int) selectedRow.get("COUPLEID"));
+
+            java.sql.ResultSet rs = statement.executeQuery(querySQL);
+
+            if (!rs.next()) {
+                System.out.println("No tests on the mother associated to this pregnancy");
+            } else {
+                do {
+                    System.out.printf(
+                            "%s %s %s%n", rs.getString("DATEPRESCRIBED")
+                            , rs.getString("TYPE")
+                            , rs.getString("RESULTS"));
+                } while (rs.next());
+            }
+        } catch (SQLException e) {
+            sqlCode = e.getErrorCode();
+            sqlState = e.getSQLState();
+
+            System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
+            System.out.println(e);
+        }
+    }
+
+    /**
+     * Adds a note with current timestamp with midwife observation.
+     */
+    private static void addNote() {
+        System.out.print("Please type your observation: ");
+        String observation = scanner.nextLine();
+
+        try {
+            // The note primary keys are not autogenerated (following prof's advice).
+            // This is a quick and dirty way of finding out the next available key.
+            String querySQL = """
+                    SELECT NOTEID
+                    FROM NOTES
+                    ORDER BY NOTEID DESC;
+                    """;
+            java.sql.ResultSet rs = statement.executeQuery(querySQL);
+            rs.next();
+            int pkey = rs.getInt("NOTEID") + 1;
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+
+            String insertSQL = """
+                    INSERT INTO NOTES
+                    VALUES (%d, '%s', '%s', %d);
+                    """.formatted(pkey, timestamp, observation, (int) selectedRow.get("APPTID"));
+            statement.executeUpdate(insertSQL);
+        } catch (SQLException e) {
+            sqlCode = e.getErrorCode();
+            sqlState = e.getSQLState();
+
+            System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
+            System.out.println(e);
+        }
+    }
+
+    /**
+     * Allows the midwife to prescribe a test for the selected pregnancy.
+     * We assume that the test is written for the mother and that the
+     * prescription date and date samples are taken is today.
+     */
+    private static void prescribeTest() {
+        System.out.print("Please enter the type of test: ");
+        String type = scanner.nextLine();
+
+        try {
+            // The test primary keys are not autogenerated (following prof's advice).
+            // This is a quick and dirty way of finding out the next available key.
+            String querySQL = """
+                    SELECT TESTID
+                    FROM TESTS
+                    ORDER BY TESTID DESC;
+                    """;
+            java.sql.ResultSet rs = statement.executeQuery(querySQL);
+            rs.next();
+            int pkey = rs.getInt("TESTID") + 1;
+
+            java.sql.Date currDate = new java.sql.Date(System.currentTimeMillis());
+
+
+            String insertSQL = """
+                    INSERT INTO Tests (TESTID, TYPE, DATEPRESCRIBED, DATESAMPLETAKEN, TECHID, PRACID, PREGNUM, COUPLEID, QCHCARDID)
+                    VALUES (%d, '%s', '%s', '%s', %d, %d, %d, %d, '%s');
+                    """.formatted(pkey, type, currDate, currDate, 8500, pracId, // a test needs a technician, we're just hardcoding a tech.
+                    (int) selectedRow.get("PREGNUM"), (int) selectedRow.get("COUPLEID"), selectedRow.get("QCHCARDID"));
+            statement.executeUpdate(insertSQL);
+        } catch (SQLException e) {
+            sqlCode = e.getErrorCode();
+            sqlState = e.getSQLState();
+
+            System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
+            System.out.println(e);
+        }
     }
 
     /**
